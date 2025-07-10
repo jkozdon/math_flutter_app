@@ -23,26 +23,27 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController numQuestionsController = TextEditingController(text: '10');
-  final TextEditingController minController = TextEditingController(text: '1');
-  final TextEditingController maxController = TextEditingController(text: '10');
+  final numQuestionsController = TextEditingController(text: '10');
+
+  final min1Controller = TextEditingController(text: '1');
+  final max1Controller = TextEditingController(text: '10');
+  final min2Controller = TextEditingController(text: '1');
+  final max2Controller = TextEditingController(text: '10');
 
   bool includeMultiplication = true;
   bool includeDivision = true;
 
   void startQuiz() {
     if (_formKey.currentState!.validate()) {
-      int numQuestions = int.parse(numQuestionsController.text);
-      int min = int.parse(minController.text);
-      int max = int.parse(maxController.text);
-
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => QuizPage(
-            totalQuestions: numQuestions,
-            min: min,
-            max: max,
+            totalQuestions: int.parse(numQuestionsController.text),
+            min1: int.parse(min1Controller.text),
+            max1: int.parse(max1Controller.text),
+            min2: int.parse(min2Controller.text),
+            max2: int.parse(max2Controller.text),
             useMultiplication: includeMultiplication,
             useDivision: includeDivision,
           ),
@@ -71,14 +72,14 @@ class _HomePageState extends State<HomePage> {
                         : null,
               ),
               SizedBox(height: 20),
-              Text("Range (min - max)", style: TextStyle(fontSize: 18)),
+              Text("Range for First Number", style: TextStyle(fontSize: 18)),
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
-                      controller: minController,
+                      controller: min1Controller,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Min'),
+                      decoration: InputDecoration(labelText: 'Min 1'),
                       validator: (val) => val == null || int.tryParse(val) == null
                           ? "Enter min"
                           : null,
@@ -87,9 +88,36 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(width: 10),
                   Expanded(
                     child: TextFormField(
-                      controller: maxController,
+                      controller: max1Controller,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Max'),
+                      decoration: InputDecoration(labelText: 'Max 1'),
+                      validator: (val) => val == null || int.tryParse(val) == null
+                          ? "Enter max"
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Text("Range for Second Number", style: TextStyle(fontSize: 18)),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: min2Controller,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: 'Min 2'),
+                      validator: (val) => val == null || int.tryParse(val) == null
+                          ? "Enter min"
+                          : null,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: max2Controller,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: 'Max 2'),
                       validator: (val) => val == null || int.tryParse(val) == null
                           ? "Enter max"
                           : null,
@@ -124,15 +152,16 @@ class _HomePageState extends State<HomePage> {
 
 class QuizPage extends StatefulWidget {
   final int totalQuestions;
-  final int min;
-  final int max;
+  final int min1, max1, min2, max2;
   final bool useMultiplication;
   final bool useDivision;
 
   QuizPage({
     required this.totalQuestions,
-    required this.min,
-    required this.max,
+    required this.min1,
+    required this.max1,
+    required this.min2,
+    required this.max2,
     required this.useMultiplication,
     required this.useDivision,
   });
@@ -155,6 +184,8 @@ class _QuizPageState extends State<QuizPage> {
   int elapsedSeconds = 0;
 
   late List<String> allowedOperators;
+
+  final FocusNode _answerFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -184,14 +215,26 @@ class _QuizPageState extends State<QuizPage> {
     final rand = Random();
     operator = allowedOperators[rand.nextInt(allowedOperators.length)];
 
+    int a, b;
+
+    a = rand.nextInt(widget.max1 - widget.min1 + 1) + widget.min1;
+    b = rand.nextInt(widget.max2 - widget.min2 + 1) + widget.min2;
+
+    // Randomize order
+    if (rand.nextBool()) {
+      num1 = a;
+      num2 = b;
+    } else {
+      num1 = b;
+      num2 = a;
+    }
+
     if (operator == '×') {
-      num1 = rand.nextInt(widget.max - widget.min + 1) + widget.min;
-      num2 = rand.nextInt(widget.max - widget.min + 1) + widget.min;
       answer = num1 * num2;
     } else {
-      num2 = rand.nextInt(widget.max - widget.min + 1) + widget.min;
-      answer = rand.nextInt(widget.max - widget.min + 1) + widget.min;
-      num1 = num2 * answer;
+      int result = num1 * num2;
+      answer = num1;
+      num1 = result;
     }
   }
 
@@ -214,7 +257,7 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void restartQuiz() {
-    Navigator.pop(context); // go back to settings
+    Navigator.pop(context); // Go back to settings screen
   }
 
   @override
