@@ -67,9 +67,9 @@ class _HomePageState extends State<HomePage> {
                 controller: numQuestionsController,
                 keyboardType: TextInputType.number,
                 validator: (val) =>
-                    val == null || int.tryParse(val) == null || int.parse(val) < 1
-                        ? "Enter a valid number"
-                        : null,
+                  val == null || int.tryParse(val) == null || int.parse(val) < 1
+                  ? "Enter a valid number"
+                  : null,
               ),
               SizedBox(height: 20),
               Text("Range for First Number", style: TextStyle(fontSize: 18)),
@@ -81,8 +81,8 @@ class _HomePageState extends State<HomePage> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(labelText: 'Min 1'),
                       validator: (val) => val == null || int.tryParse(val) == null
-                          ? "Enter min"
-                          : null,
+                        ? "Enter min"
+                        : null,
                     ),
                   ),
                   SizedBox(width: 10),
@@ -92,8 +92,8 @@ class _HomePageState extends State<HomePage> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(labelText: 'Max 1'),
                       validator: (val) => val == null || int.tryParse(val) == null
-                          ? "Enter max"
-                          : null,
+                        ? "Enter max"
+                        : null,
                     ),
                   ),
                 ],
@@ -108,8 +108,8 @@ class _HomePageState extends State<HomePage> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(labelText: 'Min 2'),
                       validator: (val) => val == null || int.tryParse(val) == null
-                          ? "Enter min"
-                          : null,
+                        ? "Enter min"
+                        : null,
                     ),
                   ),
                   SizedBox(width: 10),
@@ -119,8 +119,8 @@ class _HomePageState extends State<HomePage> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(labelText: 'Max 2'),
                       validator: (val) => val == null || int.tryParse(val) == null
-                          ? "Enter max"
-                          : null,
+                        ? "Enter max"
+                        : null,
                     ),
                   ),
                 ],
@@ -253,6 +253,10 @@ class _QuizPageState extends State<QuizPage> {
       currentQuestion++;
       generateQuestion();
       setState(() {});
+       // Request focus after the widget rebuilds
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+         _answerFocusNode.requestFocus();
+       });
     }
   }
 
@@ -264,6 +268,7 @@ class _QuizPageState extends State<QuizPage> {
   void dispose() {
     stopwatch.stop();
     controller.dispose();
+    _answerFocusNode.dispose();
     super.dispose();
   }
 
@@ -321,6 +326,7 @@ class _QuizPageState extends State<QuizPage> {
             SizedBox(height: 30),
             TextField(
               controller: controller,
+              focusNode: _answerFocusNode,
               keyboardType: TextInputType.number,
               onSubmitted: checkAnswer,
               decoration: InputDecoration(
