@@ -1,5 +1,7 @@
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class QuestionData {
   final int num1;
@@ -21,6 +23,44 @@ class QuestionData {
   String get questionText => '$num1 $operator $num2 = $correctAnswer';
 }
 
+class QuizResult {
+  final int score;
+  final int totalQuestions;
+  final int timeSeconds;
+  final DateTime date;
+  final String operations;
+
+  QuizResult({
+    required this.score,
+    required this.totalQuestions,
+    required this.timeSeconds,
+    required this.date,
+    required this.operations,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'score': score,
+      'totalQuestions': totalQuestions,
+      'timeSeconds': timeSeconds,
+      'date': date.toIso8601String(),
+      'operations': operations,
+    };
+  }
+
+  factory QuizResult.fromJson(Map<String, dynamic> json) {
+    return QuizResult(
+      score: json['score'],
+      totalQuestions: json['totalQuestions'],
+      timeSeconds: json['timeSeconds'],
+      date: DateTime.parse(json['date']),
+      operations: json['operations'],
+    );
+  }
+
+  double get percentage => (score / totalQuestions) * 100;
+}
+
 void main() {
   runApp(MathQuizApp());
 }
@@ -36,6 +76,186 @@ class MathQuizApp extends StatelessWidget {
   }
 }
 
+class HistoryPage extends StatefulWidget {
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  List<QuizResult> results = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final resultsJson = prefs.getStringList('quiz_history') ?? [];
+    final loadedResults = resultsJson.map((json) => QuizResult.fromJson(jsonDecode(json))).toList();
+
+    // Sort by date (newest first)
+    loadedResults.sort((a, b) => b.date.compareTo(a.date));
+
+    setState(() {
+      results = loadedResults;
+      isLoading = false;
+    });
+  }
+
+  Future<void> _clearHistory() async {
+    final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Clear History'),
+      content: Text('Are you sure you want to clear all quiz history?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text('Clear'),
+        ),
+      ],
+    ),
+  );
+
+    if (confirmed == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('quiz_history');
+      setState(() {
+        results.clear();
+      });
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes}m ${remainingSeconds}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Quiz History'),
+        backgroundColor: Colors.deepPurple,
+        actions: [
+          if (results.isNotEmpty)
+          IconButton(
+            icon: Icon(Icons.clear_all),
+            onPressed: _clearHistory,
+            tooltip: 'Clear History',
+          ),
+        ],
+      ),
+      body: isLoading
+      ? Center(child: CircularProgressIndicator())
+      : results.isEmpty
+      ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No quiz history yet',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Complete a quiz to see your results here!',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+      )
+      : ListView.builder(
+        padding: EdgeInsets.all(16),
+        itemCount: results.length,
+        itemBuilder: (context, index) {
+          final result = results[index];
+          final isGoodScore = result.percentage >= 80;
+
+          return Card(
+            margin: EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatDate(result.date),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isGoodScore ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${result.percentage.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            color: isGoodScore ? Colors.green[700] : Colors.orange[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Score: ${result.score}/${result.totalQuestions}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Time: ${_formatTime(result.timeSeconds)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Operations: ${result.operations}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
 class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
@@ -52,6 +272,13 @@ class _HomePageState extends State<HomePage> {
 
   bool includeMultiplication = true;
   bool includeDivision = true;
+
+  void viewHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => HistoryPage()),
+    );
+  }
 
   void startQuiz() {
     if (_formKey.currentState!.validate()) {
@@ -161,6 +388,14 @@ class _HomePageState extends State<HomePage> {
               ElevatedButton(
                 onPressed: startQuiz,
                 child: Text("Start Quiz"),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: viewHistory,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[600],
+                ),
+                child: Text("View History"),
               ),
             ],
           ),
@@ -280,6 +515,7 @@ class _QuizPageState extends State<QuizPage> {
       stopwatch.stop();
       elapsedSeconds = stopwatch.elapsed.inSeconds;
       quizFinished = true;
+         _saveQuizResult();
       setState(() {});
     } else {
       currentQuestion++;
@@ -290,6 +526,34 @@ class _QuizPageState extends State<QuizPage> {
          _answerFocusNode.requestFocus();
        });
     }
+  }
+
+  Future<void> _saveQuizResult() async {
+    final prefs = await SharedPreferences.getInstance();
+    final operations = <String>[];
+    if (widget.useMultiplication) operations.add('Multiplication');
+    if (widget.useDivision) operations.add('Division');
+
+    final result = QuizResult(
+      score: score,
+      totalQuestions: widget.totalQuestions,
+      timeSeconds: elapsedSeconds,
+      date: DateTime.now(),
+      operations: operations.join(', '),
+    );
+
+    final existingResultsJson = prefs.getStringList('quiz_history') ?? [];
+    final existingResults = existingResultsJson.map((json) => QuizResult.fromJson(jsonDecode(json))).toList();
+
+    existingResults.add(result);
+
+    // Keep only the last 50 results
+    if (existingResults.length > 50) {
+         existingResults.removeAt(0);
+       }
+
+    final updatedResultsJson = existingResults.map((result) => jsonEncode(result.toJson())).toList();
+    await prefs.setStringList('quiz_history', updatedResultsJson);
   }
 
   void restartQuiz() {
