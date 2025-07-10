@@ -1,6 +1,26 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+class QuestionData {
+  final int num1;
+  final int num2;
+  final String operator;
+  final int correctAnswer;
+  final int? userAnswer;
+  final bool isCorrect;
+
+  QuestionData({
+    required this.num1,
+    required this.num2,
+    required this.operator,
+    required this.correctAnswer,
+    this.userAnswer,
+    required this.isCorrect,
+  });
+
+  String get questionText => '$num1 $operator $num2 = $correctAnswer';
+}
+
 void main() {
   runApp(MathQuizApp());
 }
@@ -182,6 +202,7 @@ class _QuizPageState extends State<QuizPage> {
   late Stopwatch stopwatch;
   bool quizFinished = false;
   int elapsedSeconds = 0;
+  List<QuestionData> allQuestions = [];
 
   late List<String> allowedOperators;
 
@@ -240,7 +261,18 @@ class _QuizPageState extends State<QuizPage> {
 
   void checkAnswer(String? input) {
     int? userAnswer = int.tryParse(input ?? '');
-    if (userAnswer == answer) score++;
+    bool isCorrect = userAnswer == answer;
+    if (isCorrect) score++;
+
+    // Store the question data
+    allQuestions.add(QuestionData(
+      num1: num1,
+      num2: num2,
+      operator: operator,
+      correctAnswer: answer,
+      userAnswer: userAnswer,
+      isCorrect: isCorrect,
+    ));
 
     controller.clear();
 
@@ -275,28 +307,126 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     if (quizFinished) {
+      List<QuestionData> missedQuestions = allQuestions.where((q) => !q.isCorrect).toList();
+
       return Scaffold(
         appBar: AppBar(title: Text('Quiz Complete'), backgroundColor: Colors.deepPurple),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+        body: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: SingleChildScrollView(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Your Score:', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 10),
-                Text(
-                  '$score / ${widget.totalQuestions}',
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                // Score section
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Your Score:', style: TextStyle(fontSize: 24)),
+                      SizedBox(height: 10),
+                      Text(
+                        '$score / ${widget.totalQuestions}',
+                        style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                      ),
+                      SizedBox(height: 20),
+                      Text('Total Time:', style: TextStyle(fontSize: 18)),
+                      SizedBox(height: 5),
+                      Text(
+                        '$elapsedSeconds seconds',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 30),
-                Text('Total Time:', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 10),
-                Text(
-                  '$elapsedSeconds seconds',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 40),
+
+                // Missed problems section
+                if (missedQuestions.isNotEmpty) ...[
+                  Text(
+                    'Problems You Missed:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red[700]),
+                  ),
+                  SizedBox(height: 15),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: missedQuestions.length,
+                      separatorBuilder: (context, index) => Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final question = missedQuestions[index];
+                        return Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${question.num1} ${question.operator} ${question.num2} = ?',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Your answer: ',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  Text(
+                                    question.userAnswer?.toString() ?? 'No answer',
+                                    style: TextStyle(fontSize: 16, color: Colors.red, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Correct answer: ',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  Text(
+                                    question.correctAnswer.toString(),
+                                    style: TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 30),
+                ] else ...[
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 32),
+                        SizedBox(width: 12),
+                        Text(
+                          'Perfect Score! 🎉',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 30),
+                ],
+
                 ElevatedButton(
                   onPressed: restartQuiz,
                   child: Text('Back to Settings'),
