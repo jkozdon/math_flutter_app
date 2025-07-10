@@ -29,6 +29,10 @@ class QuizResult {
   final int timeSeconds;
   final DateTime date;
   final String operations;
+  final int min1;
+  final int max1;
+  final int min2;
+  final int max2;
 
   QuizResult({
     required this.score,
@@ -36,6 +40,10 @@ class QuizResult {
     required this.timeSeconds,
     required this.date,
     required this.operations,
+    required this.min1,
+    required this.max1,
+    required this.min2,
+    required this.max2,
   });
 
   Map<String, dynamic> toJson() {
@@ -55,6 +63,10 @@ class QuizResult {
       timeSeconds: json['timeSeconds'],
       date: DateTime.parse(json['date']),
       operations: json['operations'],
+      min1: json['min1'] ?? 1,
+      max1: json['max1'] ?? 10,
+      min2: json['min2'] ?? 1,
+      max2: json['max2'] ?? 10,
     );
   }
 
@@ -235,6 +247,13 @@ class _HistoryPageState extends State<HistoryPage> {
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[700],
+                        ),
+                      ),
+                      Text(
+                        'Range: ${result.min1}-${result.max1} & ${result.min2}-${result.max2}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
@@ -540,6 +559,10 @@ class _QuizPageState extends State<QuizPage> {
       timeSeconds: elapsedSeconds,
       date: DateTime.now(),
       operations: operations.join(', '),
+      min1: widget.min1,
+      max1: widget.max1,
+      min2: widget.min2,
+      max2: widget.max2,
     );
 
     final existingResultsJson = prefs.getStringList('quiz_history') ?? [];
@@ -739,4 +762,3 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 }
-
