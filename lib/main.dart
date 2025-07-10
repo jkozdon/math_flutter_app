@@ -727,36 +727,44 @@ class _QuizPageState extends State<QuizPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Math Quiz'), backgroundColor: Colors.deepPurple),
+      resizeToAvoidBottomInset: false,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Question $currentQuestion of ${widget.totalQuestions}', style: TextStyle(fontSize: 20)),
-            SizedBox(height: 20),
-            Text('Score: $score', style: TextStyle(fontSize: 18)),
-            SizedBox(height: 40),
-            Text(
-              '$num1 $operator $num2 = ?',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+        child: SingleChildScrollView(
+          child: Container(
+            height: MediaQuery.of(context).size.height - 
+            MediaQuery.of(context).padding.top -
+            kToolbarHeight - 200, // Account for app bar and padding
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Question $currentQuestion of ${widget.totalQuestions}', style: TextStyle(fontSize: 20)),
+                SizedBox(height: 20),
+                Text('Score: $score', style: TextStyle(fontSize: 18)),
+                SizedBox(height: 40),
+                Text(
+                  '$num1 $operator $num2 = ?',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 30),
+                TextField(
+                  controller: controller,
+                  focusNode: _answerFocusNode,
+                  keyboardType: TextInputType.number,
+                  onSubmitted: checkAnswer,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your answer',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => checkAnswer(controller.text),
+                  child: Text('Submit'),
+                ),
+              ],
             ),
-            SizedBox(height: 30),
-            TextField(
-              controller: controller,
-              focusNode: _answerFocusNode,
-              keyboardType: TextInputType.number,
-              onSubmitted: checkAnswer,
-              decoration: InputDecoration(
-                hintText: 'Enter your answer',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => checkAnswer(controller.text),
-              child: Text('Submit'),
-            ),
-          ],
+          ),
         ),
       ),
     );
