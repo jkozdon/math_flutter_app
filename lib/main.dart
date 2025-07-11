@@ -520,8 +520,11 @@ class _HomePageState extends State<HomePage> {
   final min2Controller = TextEditingController(text: '1');
   final max2Controller = TextEditingController(text: '10');
 
+  bool includeAddition = false;
+  bool includeSubtraction = false;
+  bool includeNegatives = false;
   bool includeMultiplication = true;
-  bool includeDivision = true;
+  bool includeDivision = false;
 
   void viewHistory() {
     Navigator.push(
@@ -541,6 +544,9 @@ class _HomePageState extends State<HomePage> {
             max1: int.parse(max1Controller.text),
             min2: int.parse(min2Controller.text),
             max2: int.parse(max2Controller.text),
+            useAddition: includeAddition,
+            useSubtraction: includeSubtraction,
+            useNegatives: includeNegatives,
             useMultiplication: includeMultiplication,
             useDivision: includeDivision,
           ),
@@ -625,6 +631,25 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: 20),
               Text("Operations", style: TextStyle(fontSize: 18)),
               CheckboxListTile(
+                value: includeAddition,
+                onChanged: (val) => setState(() => includeAddition = val ?? false),
+                title: Text("Addition"),
+              ),
+              CheckboxListTile(
+                value: includeSubtraction,
+                onChanged: (val) => setState(() => includeSubtraction = val ?? false),
+                title: Text("Subtraction"),
+              ),
+              if (includeSubtraction)
+              Padding(
+                padding: EdgeInsets.only(left: 32.0),
+                child: CheckboxListTile(
+                  value: includeNegatives,
+                  onChanged: (val) => setState(() => includeNegatives = val ?? false),
+                  title: Text("Include negative numbers"),
+                ),
+              ),
+              CheckboxListTile(
                 value: includeMultiplication,
                 onChanged: (val) => setState(() => includeMultiplication = val ?? false),
                 title: Text("Multiplication"),
@@ -655,6 +680,9 @@ class _HomePageState extends State<HomePage> {
 class QuizPage extends StatefulWidget {
   final int totalQuestions;
   final int min1, max1, min2, max2;
+  final bool useAddition;
+  final bool useSubtraction;
+  final bool useNegatives;
   final bool useMultiplication;
   final bool useDivision;
 
@@ -664,6 +692,9 @@ class QuizPage extends StatefulWidget {
     required this.max1,
     required this.min2,
     required this.max2,
+    required this.useAddition,
+    required this.useSubtraction,
+    required this.useNegatives,
     required this.useMultiplication,
     required this.useDivision,
   });
@@ -694,6 +725,8 @@ class _QuizPageState extends State<QuizPage> {
   void initState() {
     super.initState();
     allowedOperators = [];
+    if (widget.useAddition) allowedOperators.add('+');
+    if (widget.useSubtraction) allowedOperators.add('-');
     if (widget.useMultiplication) allowedOperators.add('×');
     if (widget.useDivision) allowedOperators.add('÷');
 
@@ -734,10 +767,20 @@ class _QuizPageState extends State<QuizPage> {
 
     if (operator == '×') {
       answer = num1 * num2;
-    } else {
+    } else if (operator == '÷') {
       int result = num1 * num2;
       answer = num1;
       num1 = result;
+    } else if (operator == '+') {
+      answer = num1 + num2;
+    } else if (operator == '-') {
+      if (!widget.useNegatives && num1 < num2) {
+        // Ensure num1 is always greater than num2 for subtraction
+        int temp = num1;
+        num1 = num2;
+        num2 = temp;
+      }
+      answer = num1 - num2;
     }
   }
 
@@ -778,6 +821,8 @@ class _QuizPageState extends State<QuizPage> {
   Future<void> _saveQuizResult() async {
     final prefs = await SharedPreferences.getInstance();
     final operations = <String>[];
+    if (widget.useAddition) operations.add('Addition');
+    if (widget.useSubtraction) operations.add('Subtraction');
     if (widget.useMultiplication) operations.add('Multiplication');
     if (widget.useDivision) operations.add('Division');
 
