@@ -160,7 +160,7 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Quiz History'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.redAccent,
         actions: [
           if (results.isNotEmpty)
           IconButton(
@@ -411,9 +411,6 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: viewHistory,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[600],
-                ),
                 child: Text("View History"),
               ),
             ],
@@ -597,7 +594,7 @@ class _QuizPageState extends State<QuizPage> {
       List<QuestionData> missedQuestions = allQuestions.where((q) => !q.isCorrect).toList();
 
       return Scaffold(
-        appBar: AppBar(title: Text('Quiz Complete'), backgroundColor: Colors.deepPurple),
+        appBar: AppBar(title: Text('Quiz Complete'), backgroundColor: Colors.greenAccent),
         body: Padding(
           padding: const EdgeInsets.all(24.0),
           child: SingleChildScrollView(
@@ -726,7 +723,7 @@ class _QuizPageState extends State<QuizPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Math Quiz'), backgroundColor: Colors.deepPurple),
+      appBar: AppBar(title: Text('Math Quiz'), backgroundColor: Colors.blueAccent),
       resizeToAvoidBottomInset: false,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
