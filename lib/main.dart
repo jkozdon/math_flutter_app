@@ -227,73 +227,109 @@ class _HistoryPageState extends State<HistoryPage> {
 
           return Card(
             margin: EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _formatDate(result.date),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isGoodScore ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${result.percentage.toStringAsFixed(0)}%',
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QuizDetailPage(result: result),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _formatDate(result.date),
                           style: TextStyle(
-                            color: isGoodScore ? Colors.green[700] : Colors.orange[700],
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isGoodScore ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${result.percentage.toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              color: isGoodScore ? Colors.green[700] : Colors.orange[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Score: ${result.score}/${result.totalQuestions}',
+                          style: TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Score: ${result.score}/${result.totalQuestions}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        Text(
+                          'Time: ${_formatTime(result.timeSeconds)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Time: ${_formatTime(result.timeSeconds)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[700],
+                        Text(
+                          'Range: ${result.min1}-${result.max1} & ${result.min2}-${result.max2}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Range: ${result.min1}-${result.max1} & ${result.min2}-${result.max2}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Operations: ${result.operations}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                      ],
                     ),
-                  ),
-                ],
+                    SizedBox(height: 4),
+                    Text(
+                      'Operations: ${result.operations}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    if (result.missedQuestions.isNotEmpty) ...[
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.error_outline, size: 16, color: Colors.red),
+                          SizedBox(width: 4),
+                          Text(
+                            '${result.missedQuestions.length} missed question${result.missedQuestions.length != 1 ? 's' : ''}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '(tap to view)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           );
@@ -302,6 +338,174 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 }
+
+class QuizDetailPage extends StatelessWidget {
+  final QuizResult result;
+
+  QuizDetailPage({required this.result});
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes}m ${remainingSeconds}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isGoodScore = result.percentage >= 80;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Quiz Details'),
+        backgroundColor: Colors.redAccent,
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Summary Card
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quiz Summary',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDate(result.date)),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isGoodScore ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${result.percentage.toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              color: isGoodScore ? Colors.green[700] : Colors.orange[700],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Score: ${result.score}/${result.totalQuestions}',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Time: ${_formatTime(result.timeSeconds)}',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text('Operations: ${result.operations}'),
+                    Text('Range: ${result.min1}-${result.max1} & ${result.min2}-${result.max2}'),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(height: 20),
+
+            // Missed Questions Section
+            if (result.missedQuestions.isNotEmpty) ...[
+              Text(
+                'Missed Questions (${result.missedQuestions.length})',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red[700]),
+              ),
+              SizedBox(height: 12),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: result.missedQuestions.length,
+                separatorBuilder: (context, index) => SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final question = result.missedQuestions[index];
+                  return Card(
+                    color: Colors.red.withOpacity(0.05),
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${index + 1}. ${question.num1} ${question.operator} ${question.num2} = ?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                          SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text('Your answer: '),
+                              Text(
+                                question.userAnswer?.toString() ?? 'No answer',
+                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text('Correct answer: '),
+                              Text(
+                                question.correctAnswer.toString(),
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ] else ...[
+              Card(
+                color: Colors.green.withOpacity(0.05),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        'Perfect Score! No missed questions.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
@@ -576,7 +780,7 @@ class _QuizPageState extends State<QuizPage> {
     final operations = <String>[];
     if (widget.useMultiplication) operations.add('Multiplication');
     if (widget.useDivision) operations.add('Division');
-  
+
   // Get missed questions
   List<QuestionData> missedQuestions = allQuestions.where((q) => !q.isCorrect).toList();
 
@@ -760,7 +964,7 @@ class _QuizPageState extends State<QuizPage> {
         padding: const EdgeInsets.all(24.0),
         child: SingleChildScrollView(
           child: Container(
-            height: MediaQuery.of(context).size.height - 
+            height: MediaQuery.of(context).size.height -
             MediaQuery.of(context).padding.top -
             kToolbarHeight - 200, // Account for app bar and padding
             child: Column(
