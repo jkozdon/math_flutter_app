@@ -33,6 +33,7 @@ class QuizResult {
   final int max1;
   final int min2;
   final int max2;
+  final List<QuestionData> missedQuestions;
 
   QuizResult({
     required this.score,
@@ -44,6 +45,7 @@ class QuizResult {
     required this.max1,
     required this.min2,
     required this.max2,
+    this.missedQuestions = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -53,10 +55,34 @@ class QuizResult {
       'timeSeconds': timeSeconds,
       'date': date.toIso8601String(),
       'operations': operations,
+      'min1': min1,
+      'max1': max1,
+      'min2': min2,
+      'max2': max2,
+      'missedQuestions': missedQuestions.map((q) => {
+        'num1': q.num1,
+        'num2': q.num2,
+        'operator': q.operator,
+        'correctAnswer': q.correctAnswer,
+        'userAnswer': q.userAnswer,
+        'isCorrect': q.isCorrect,
+      }).toList(),
     };
   }
 
   factory QuizResult.fromJson(Map<String, dynamic> json) {
+    List<QuestionData> missedQuestions = [];
+    if (json['missedQuestions'] != null) {
+      missedQuestions = (json['missedQuestions'] as List).map((q) => QuestionData(
+        num1: q['num1'],
+        num2: q['num2'],
+        operator: q['operator'],
+        correctAnswer: q['correctAnswer'],
+        userAnswer: q['userAnswer'],
+        isCorrect: q['isCorrect'],
+      )).toList();
+    }
+
     return QuizResult(
       score: json['score'],
       totalQuestions: json['totalQuestions'],
@@ -67,6 +93,7 @@ class QuizResult {
       max1: json['max1'] ?? 10,
       min2: json['min2'] ?? 1,
       max2: json['max2'] ?? 10,
+      missedQuestions: missedQuestions,
     );
   }
 
@@ -549,6 +576,9 @@ class _QuizPageState extends State<QuizPage> {
     final operations = <String>[];
     if (widget.useMultiplication) operations.add('Multiplication');
     if (widget.useDivision) operations.add('Division');
+  
+  // Get missed questions
+  List<QuestionData> missedQuestions = allQuestions.where((q) => !q.isCorrect).toList();
 
     final result = QuizResult(
       score: score,
@@ -560,6 +590,7 @@ class _QuizPageState extends State<QuizPage> {
       max1: widget.max1,
       min2: widget.min2,
       max2: widget.max2,
+    missedQuestions: missedQuestions,
     );
 
     final existingResultsJson = prefs.getStringList('quiz_history') ?? [];
