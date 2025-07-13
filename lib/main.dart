@@ -521,7 +521,6 @@ class _HomePageState extends State<HomePage> {
   final max2Controller = TextEditingController(text: '10');
 
   bool includeMultiplication = true;
-  bool includeDivision = true;
 
   void viewHistory() {
     Navigator.push(
@@ -542,7 +541,7 @@ class _HomePageState extends State<HomePage> {
             min2: int.parse(min2Controller.text),
             max2: int.parse(max2Controller.text),
             useMultiplication: includeMultiplication,
-            useDivision: includeDivision,
+            useDivision: !includeMultiplication, // true = multiplication, false = division
           ),
         ),
       );
@@ -624,15 +623,10 @@ class _HomePageState extends State<HomePage> {
               ),
               SizedBox(height: 20),
               Text("Operations", style: TextStyle(fontSize: 18)),
-              CheckboxListTile(
-                value: includeMultiplication,
-                onChanged: (val) => setState(() => includeMultiplication = val ?? false),
-                title: Text("Multiplication"),
-              ),
-              CheckboxListTile(
-                value: includeDivision,
-                onChanged: (val) => setState(() => includeDivision = val ?? false),
-                title: Text("Division (no remainder)"),
+              SwitchListTile(
+                value: includeMultiplication, // true = multiplication, false = division
+                onChanged: (val) => setState(() => includeMultiplication = val),
+                title: Text(includeMultiplication ? "Multiplication" : "Division (no remainder)"),
               ),
               SizedBox(height: 30),
               ElevatedButton(
